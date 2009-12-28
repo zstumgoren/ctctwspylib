@@ -213,21 +213,41 @@ class CTCTConnection:
             Takes in a dictionary of parameters
             list_id_number parameter is required
             """
-        contact_list_uri = "/lists/" + str(list_id_number)
-             
-        xml_body = """
-            <entry xmlns="http://www.w3.org/2005/Atom">
-                <id>""" + params['id'] + """</id>
-                <content type="application/vnd.ctct+xml">
+        contact_list_uri = '/lists/' + str(list_id_number)
+        response = self.connection.request_get(contact_list_uri)
+        
+        # If the status code isn't 200, we have a problem so just return None
+        if(int(response['headers']['status']) != 200):
+            return None
+        
+        # Build an XML Tree from the return
+        xml = ET.fromstring(response['body'])
+        
+        contact_list_xml = xml.find('{http://www.w3.org/2005/Atom}content')
+        
+        if('name' not in params):
+            params['name'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}Name')
+        if('opt_in_default' not in params):
+            params['opt_in_default'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}OptInDefault')
+        if('sort_order' not in params):
+            params['sort_order'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}SortOrder')
+        
+        xml_update_body = """
+                <content type="application/vnd.ctct+xml" xmlns="http://www.w3.org/2005/Atom">
                     <ContactList xmlns="http://ws.constantcontact.com/ns/1.0/">
                         <Name>""" + params['name'] + """</Name>
+                        <OptInDefault>""" + params['opt_in_default'] + """</OptInDefault>
+                        <SortOrder>""" + params['sort_order'] + """</SortOrder>
                     </ContactList>
                 </content>
-            </entry>
         """
-        response = self.connection.request_put(contact_list_uri, body=xml_body, headers={'Content-Type': 'application/atom+xml'})
         
-        # Web service returns 201 or 204 status code if successful
+        xml.remove(contact_list_xml)
+        xml.append(ET.fromstring(xml_update_body))
+        
+        response = self.connection.request_put(contact_list_uri, body=ET.tostring(xml), headers={'Content-Type': 'application/atom+xml'})
+        
+        #Web service returns 201 or 204 status code if successful
         if(int(response['headers']['status']) == 201 or int(response['headers']['status']) == 204):
             return True
         else:
