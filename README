@@ -326,7 +326,7 @@ Fields returned are:
        
 **Get Campaign Events
 
-To retrieve events for a campaign specify the campaign id and  the event type.  Event type is an enumeration of the CTCTConnection class.
+To retrieve events for a campaign specify the campaign id and the event type.  Event type is an enumeration of the CTCTConnection class.
 
 Event types are:
     EVENTS_BOUNCES (0)
@@ -341,3 +341,120 @@ Event types are:
    
     #get the total sends for the campaign
     sent = mConnection.get_campaign_events('12345678123', CTCTConnection.EVENTS_SENDS)
+    
+-----Activities-----
+
+**Retrieve ALL Activities
+
+Fields returned are:
+    id
+    updated
+    type
+    status
+    errors
+    file_name
+    transaction_count
+    run_start_time
+    run_finish_time
+    insert_time
+    
+    #get all activities
+    activities = mConnection.get_activities()
+    
+    #print the status for all activities
+    for activity in activities:
+        print activity['status']
+        
+**Get An Individual Activity
+
+To retrieve an individual activity just pass the activity id.  A dictionary containing the invidual activity data will be returned.
+
+Fields returned are:    
+    id
+    updated
+    type
+    status
+    errors
+    file_name
+    transaction_count
+    run_start_time
+    run_finish_time
+    insert_time
+    
+    #not a real activity id, for example
+    activity_id = '1234567890123'
+    
+    #get the individual activity
+    activity = mConnection.get_activity(activity_id_number=activity_id)
+    
+    #print the errors for the activity if there are any
+    errors = activity['errors']
+    for error in errors:
+        print error
+        
+**Creating an Add Contacts / Remove Contacts Activity
+
+To create an Add or Remove Contacts activity you must supply a type (Add or Remove), the lists you would like to add to or remove from, and the actual contact data to be added or removed.  The activity id is returned or None if it was unsuccessful
+
+The types are: ADD_CONTACTS, SV_ADD, ADD_CONTACT_DETAIL, REMOVE_CONTACTS_FROM_LISTS. Constant Contact will decide which Add to use depending on the data so using any of the three add types will yield the same result.  To remove contacts from lists use REMOVE_CONTACTS_FROM_LISTS.
+    
+The data has to be supplied in a tabular format.  The first row is always the column names and each row after that is the data for each contact in the same order as the supplied columns. For example:
+
+EMAIL ADDRESS,  FIRST NAME, LAST NAME
+num1@email.com, Joe,        Smith
+num2@email.com, Jane,       Smith
+...
+
+In python, there is a dictionary containting a key columns and a key rows that contain the values in python lists.  The lists will contain the column data and row data respectively.
+
+    #lists contacts will be added to
+    lists = ['http://api.constantcontact.com/ws/customers/username/lists/1', 'http://api.constantcontact.com/ws/customers/username/lists/2']
+    
+    #data to be added to the lists, email address, first name
+    data = {'columns': ['EMAIL ADDRESS', 'FIRST NAME'], 'rows': ['num1@email.com', 'Joe']}
+    
+    #create the add contact activity, the activity id is returned if successful
+    activity_id = mConnection.create_activity(type='SV_ADD', lists=lists, data=data)
+    
+    #check the activity status
+    activity = mConnection.get_activity(activity_id_number=activity_id)
+    print activity['status']
+    
+**Creating a Clear Contacts Activity
+
+A Clear Contacts activity is different than a Remove Contacts activity. It will clear all contacts from a list or lists.  To create the activity just supply the lists to be cleared. The activity id is returned.
+
+    #lists to clear
+    lists = ['http://api.constantcontact.com/ws/customers/username/lists/1', 'http://api.constantcontact.com/ws/customers/username/lists/1']
+
+    #create clear contacts activity
+    activity_id = mConnection.create_activity(type='CLEAR_CONTACTS_FROM_LISTS', lists=lists)
+    
+    #check the activity status
+    activity = mConnection.get_activity(activity_id_number=activity_id)
+    print activity['status']
+    
+**Creating a Export Contacts Activity
+
+A Export activity exports contacts from a list or lists to a txt or csv file.  To create the activity just supply the type of EXPORT_CONTACTS and a list to export. Additionally you can also supply options which are passed in the 'data' parameter. Options are dictionary entries with the key being the keynames below and the corresponding value options.
+
+Options (defaults are bold):
+        fileType        csv or txt
+        exportOptDate   true or false
+        exportOptSource true or false
+        exportListName  true or false
+        sortBy          EMAIL_ADDRESS, DATE_DESC
+        columns         FIRST NAME, MIDDLE NAME, LAST NAME, etc... complete list see http://developer.constantcontact.com/doc/activities
+        
+        #the list to export
+        lists = {'list_id': 'http://api.constantcontact.com/ws/customers/username/lists/1'}
+        
+        #the columns to export, email address is always exported by default
+        data = {'columns': ['First Name', 'Last Name']}
+        
+        #create an export activity as a csv file sorting the columns by date descending
+        activity_id = mConnection.create_activity(type='EXPORT_CONTACTS', lists=lists, data=data)
+        
+        #check the activity status
+        activity = mConnection.get_activity(activity_id_number=activity_id)
+        print activity['status']

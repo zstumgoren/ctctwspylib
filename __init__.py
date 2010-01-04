@@ -18,6 +18,7 @@ __author__ = "Huan Lai, Constant Contact Labs"
 __license__ = "http://www.apache.org/licenses/LICENSE-2.0"
 
 from restful_lib import Connection
+from urllib import quote, quote_plus, urlencode
 import xml.etree.ElementTree as ET
 import re
 
@@ -48,6 +49,12 @@ class CTCTConnection:
     CAMPAIGNS_RUNNING = 2
     CAMPAIGNS_SENT = 3
     CAMPAIGNS_SCHEDULED = 4
+    
+    #atom namespace
+    NS_ATOM = 'http://www.w3.org/2005/Atom'
+    
+    #constantcontact namespace
+    NS_CTCT = 'http://ws.constantcontact.com/ns/1.0/'
     
     def __init__(self, api_key, username, password):
         self.username = username 
@@ -313,6 +320,57 @@ class CTCTConnection:
         if(next != None):
             contacts.extend(self.get_contacts(path=next))
             
+        return contacts
+        
+    def query_contacts(self, emails, path=None):
+        """ Queries a list of contacts and returns only matching contacts """
+        contacts = []
+        
+        #get the namespaces for use locally
+        atom = CTCTConnection.NS_ATOM
+        ctct = CTCTConnection.NS_CTCT
+        
+        if(path==None):
+            path = '/contacts?'
+            for email in emails:
+                path += urlencode({'email':email}) + '&' #trailing ampersand won't hurt
+        
+        response = self.connection.request_get(path)
+        
+        if(int(response['headers']['status']) != 200):
+            return None
+            
+        # Build an XML Tree from the return
+        xml = ET.fromstring(response['body'])
+        
+        # Check if there is a next link
+        links = xml.findall('{%s}link' % (atom));
+        next = None
+        for link in links:
+            if(link.get('rel') == 'next'):
+                next_link = link.get('href')
+                slash = next_link.find('/contacts')
+                next = next_link[slash:]
+                break
+        
+        # Get all of the contacts that were found
+        entries = xml.findall('{%s}entry' % (atom))
+        for entry in entries:
+            contact = {'id': entry.findtext('{%s}id' % (atom)),
+                       'status': entry.findtext('{%s}content/{%s}Contact/{%s}Status' % (atom, ctct, ctct)),
+                       'email_address': entry.findtext('{%s}content/{%s}Contact/{%s}EmailAddress' % (atom, ctct, ctct)),
+                       'email_type': entry.findtext('{%s}content/{%s}Contact/{%s}EmailType' % (atom, ctct, ctct)),
+                       'name': entry.findtext('{%s}content/{%s}Contact/{%s}Name' % (atom, ctct, ctct)),
+                       'opt_in_time': entry.findtext('{%s}content/{%s}Contact/{%s}OptInTime' % (atom, ctct, ctct)),
+                       'opt_in_source': entry.findtext('{%s}content/{%s}Contact/{%s}OptInSource' % (atom, ctct, ctct)),
+                       'updated': entry.findtext('{%s}updated' % (atom))}
+            
+            contacts.append(contact)
+            
+        # If there is a next link, recursively retrieve from there too
+        if(next != None):
+            contacts.extend(self.query_contacts(path=next))
+        
         return contacts
     
     def get_contact(self, email=None, contact_id_number=None):
@@ -870,4 +928,173 @@ class CTCTConnection:
         if(next != None):
             events.extend(self.__get_campaign_events_click_single_url(next))
             
-        return events                     
+        return events
+
+    def get_activities(self, path=None):
+        """ Returns all of the Activities from ConstantContact. """
+        activities = []
+        
+        #get the namespaces for use locally
+        atom = CTCTConnection.NS_ATOM
+        ctct = CTCTConnection.NS_CTCT
+    
+        # Default path
+        if(path == None):
+            path = '/activities'
+            
+        response = self.connection.request_get(path)
+        
+        # If the status code isn't 200, we have a problem so just return None
+        if(int(response['headers']['status']) != 200):
+            return None
+        
+        # Build an XML Tree from the return
+        xml = ET.fromstring(response['body'])
+
+        # Check if there is a next link
+        links = xml.findall('{%s}link' % (atom));
+        next = None
+        for link in links:
+            if(link.get('rel') == 'next'):
+                next_link = link.get('href')
+                slash = next_link.find('/activities')
+                next = next_link[slash:]
+                break
+                
+        # Get all of the activities
+        entries = xml.findall('{%s}entry' % (atom))
+        
+        for entry in entries:
+            activity = {'id': entry.findtext('{%s}id' % (atom)),
+                        'updated': entry.findtext('{%s}updated' % (atom)),
+                        'type': entry.findtext('{%s}content/{%s}Activity/{%s}Type' % (atom, ctct, ctct)),
+                        'status': entry.findtext('{%s}content/{%s}Activity/{%s}Status' % (atom, ctct, ctct)),
+                        'errors': entry.findtext('{%s}content/{%s}Activity/{%s}Errors' % (atom, ctct, ctct)),
+                        'file_name': entry.findtext('{%s}content/{%s}Activity/{%s}FileName' % (atom, ctct, ctct)),
+                        'transaction_count': entry.findtext('{%s}content/{%s}Activity/{%s}TransactionCount' % (atom, ctct, ctct)),
+                        'run_start_time': entry.findtext('{%s}content/{%s}Activity/{%s}RunStartTime' % (atom, ctct, ctct)),
+                        'run_finish_time': entry.findtext('{%s}content/{%s}Activity/{%s}RunFinishTime' % (atom, ctct, ctct)),
+                        'insert_time': entry.findtext('{%s}content/{%s}Activity/{%s}InsertTime' % (atom, ctct, ctct))
+                        }
+            
+            activities.append(activity)
+            
+        # If there is a next link, recursively retrieve from there too
+        if(next != None):
+            activities.extend(self.get_activities(next))
+            
+        return activities
+        
+    def get_activity(self, activity_id_number):
+        """ Returns detailed information about an individual Activity 
+            Requires the activity id number """
+        
+        #get the namespaces for use locally
+        atom = CTCTConnection.NS_ATOM
+        ctct = CTCTConnection.NS_CTCT
+        
+        activity_id = '/activities/' + str(activity_id_number)
+        response = self.connection.request_get(activity_id)
+        
+        # If the status code isn't 200, we have a problem so just return None
+        if(int(response['headers']['status']) != 200):
+            return None
+        
+        # Build an XML Tree from the return
+        xml = ET.fromstring(response['body'])
+        activity_xml = xml.find('{%s}content/{%s}Activity' % (atom, ctct))
+        
+        # Get all of the Errors this Activity has generated
+        errors = []
+        errors_xml = activity_xml.findall('{%s}Errors/{%s}Error' % (ctct, ctct))
+        for error in errors_xml:
+            errors.append({'line_number': error.findtext('{%s}LineNumber' % (ctct)),
+                           'email_address': error.findtext('{%s}EmailAddress' % (ctct)),
+                           'message': error.findtext('{%s}Message' % (ctct))
+                            })
+                           
+        activity = {'id': xml.findtext('{%s}id' % (atom)),
+                    'updated': xml.findtext('{%s}updated' % (atom)),
+                    'type': activity_xml.findtext('{%s}Type' % (ctct)),
+                    'status': activity_xml.findtext('{%s}Status' % (ctct)),
+                    'errors': errors,
+                    'file_name': activity_xml.findtext('{%s}FileName' % (ctct)),
+                    'transaction_count': activity_xml.findtext('{%s}TransactionCount' % (ctct)),
+                    'run_start_time': activity_xml.findtext('{%s}RunStartTime' % (ctct)),
+                    'run_finish_time': activity_xml.findtext('{%s}RunFinishTime' % (ctct)),
+                    'insert_time': activity_xml.findtext('{%s}InsertTime' % (ctct))
+                    }
+                    
+        return activity
+
+    def create_activity(self, type, lists, data=None, filename=None):
+        """ Creates an activity to Add or Remove a large group of contacts
+            to a list or multiple lists. The two supported request
+            formats are application/x-www-form-urlencoded (raw data)
+            and multipart/form-data (file) Returns Activity Id for 
+            created activity """
+        
+        post_body = 'activityType=%s' % type
+        
+        if(filename is None):
+            if(type is 'CLEAR_CONTACTS_FROM_LISTS'):
+                for list in lists:
+                    post_body += '&' + urlencode({'lists': list})
+               
+            elif(type in ['SV_ADD', 'ADD_CONTACTS', 'ADD_CONTACT_DETAIL', 'REMOVE_CONTACTS_FROM_LISTS']):
+                if(data is not None):
+                    post_body += '&data='
+            
+                    columns = data['columns']
+                    rows = data['rows']
+            
+                    last_column = columns[-1]
+                    for column in columns:
+                        post_body += quote_plus(column)
+                        post_body += '%2C' if column != last_column else '%0A'
+            
+                    index = 1
+                    last_row = rows[-1]
+                    values_per_row = len(rows[-1])
+                    for row in rows:
+                        for value in row:
+                            post_body += quote(value) + '%2C' if index % values_per_row != 0 else quote(value)
+                            index += 1
+                        post_body += '%0A' if row != last_row else ''
+                     
+                    for list in lists:
+                        post_body += '&' + urlencode({'lists': list})    
+            
+            elif(type is 'EXPORT_CONTACTS'):
+                post_body += '&fileType=' + data['fileType'] if 'fileType' in data else '&fileType=TXT'
+                post_body += '&exportOptDate=' + data['exportOptDate'] if 'exportOptDate' in data else '&exportOptDate=true'
+                post_body += '&exportOptSource=' + data['exportOptSource'] if 'exportOptSource' in data else '&exportOptSource=true'
+                post_body += '&exportListName=' + data['exportListName'] if 'exportListName' in data else '&exportListName=true'
+                post_body += '&sortBy=' + data['sortBy'] if 'sortBy' in data else '&sortBy=EMAIL_ADDRESS'
+                
+                if('columns' in data):
+                    for column in data['columns']:
+                        post_body += '&' + urlencode({'columns': column})
+                else:
+                    post_body += '&columns=' + 'EMAIL%20ADDRESS'
+                    
+                for list in lists:
+                    post_body += '&' + urlencode({'listId': list})
+
+            response = self.connection.request_post('/activities', body=post_body, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        
+        elif(filename is not None):
+            #TODO: Add multipart/form-data bulk functionality
+            return None
+ 
+        # If the status code isn't 201, we have a problem so just return None
+        if(int(response['headers']['status']) != 201):
+            return None
+        
+        # Build an XML Tree from the return
+        xml = ET.fromstring(response['body'])
+            
+        #return activity id of created activity
+        activity_id = xml.findtext('{%s}id' % CTCTConnection.NS_ATOM)
+            
+        return activity_id
