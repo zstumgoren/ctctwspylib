@@ -186,7 +186,7 @@ class CTCTConnection:
             
         # If there is a next link, recursively retrieve from there too
         if(next != None):
-            contacts.extend(self.get_contacts(path=next))
+            contacts.extend(self.get_contact_list_members(path=next))
             
         return contacts
     
