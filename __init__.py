@@ -75,7 +75,9 @@ class CTCTConnection:
             if re.match('^[\w.@-]{6,}$', self.username): #does username only contain allowable characters? valid are a-zA-Z0-9.-_@
                 return False                             #valid username, invalid credentials
             else:
-                raise InvalidUsernameException('This user name contains characters that are no longer supported. Please log in to constantcontact.com and update your user name.')
+                raise InvalidUsernameException('This user name contains characters that are no '
+                                               'longer supported. Please log in to '
+                                               'constantcontact.com and update your user name.')
         
     def get_contact_lists(self, path=None):
         """ Returns all of the Contact Lists from ConstantContact. 
@@ -97,19 +99,21 @@ class CTCTConnection:
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/lists')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
         
         # Get all of the contact lists
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
             contact_list = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
-                            'name': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}Name'),
+                            'name': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                   '{http://ws.constantcontact.com/ns/1.0/}ContactList/'
+                                                   '{http://ws.constantcontact.com/ns/1.0/}Name'),
                             'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated')}
             
             # Don't include some lists
@@ -117,8 +121,8 @@ class CTCTConnection:
                 contact_lists.append(contact_list)
             
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            contact_lists.extend(self.get_contact_lists(next))
+        if(next_path != None):
+            contact_lists.extend(self.get_contact_lists(path=next_path))
             
         return contact_lists
     
@@ -134,7 +138,8 @@ class CTCTConnection:
         
         # Build an XML Tree from the return
         xml = ET.fromstring(response['body'])
-        contact_list_xml = xml.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ContactList')
+        contact_list_xml = xml.find('{http://www.w3.org/2005/Atom}content/'
+                                    '{http://ws.constantcontact.com/ns/1.0/}ContactList')
         
         list = {'id': xml.findtext('{http://www.w3.org/2005/Atom}id'),
                     'updated': xml.findtext('{http://www.w3.org/2005/Atom}updated'),
@@ -166,27 +171,31 @@ class CTCTConnection:
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/lists')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
             
         # Get all of the contacts
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
             contact = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
-                       'name': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ContactListMember/{http://ws.constantcontact.com/ns/1.0/}Name'),
-                       'email_address': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ContactListMember/{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
+                       'name': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                              '{http://ws.constantcontact.com/ns/1.0/}ContactListMember/'
+                                              '{http://ws.constantcontact.com/ns/1.0/}Name'),
+                       'email_address': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}ContactListMember/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
                        'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated')}
             
             contacts.append(contact)
             
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            contacts.extend(self.get_contact_list_members(path=next))
+        if(next_path != None):
+            contacts.extend(self.get_contact_list_members(path=next_path))
             
         return contacts
     
@@ -233,12 +242,15 @@ class CTCTConnection:
         contact_list_xml = xml.find('{http://www.w3.org/2005/Atom}content')
         
         if('name' not in params):
-            params['name'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}Name')
+            params['name'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}Name')
         if('opt_in_default' not in params):
-            params['opt_in_default'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}OptInDefault')
+            params['opt_in_default'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/'
+                                                                 '{http://ws.constantcontact.com/ns/1.0/}OptInDefault')
         if('sort_order' not in params):
-            params['sort_order'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/{http://ws.constantcontact.com/ns/1.0/}SortOrder')
-        
+            params['sort_order'] = contact_list_xml.findtext('{http://ws.constantcontact.com/ns/1.0/}ContactList/'
+                                                             '{http://ws.constantcontact.com/ns/1.0/}SortOrder')
+
         xml_update_body = """
                 <content type="application/vnd.ctct+xml" xmlns="http://www.w3.org/2005/Atom">
                     <ContactList xmlns="http://ws.constantcontact.com/ns/1.0/">
@@ -294,31 +306,43 @@ class CTCTConnection:
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/contacts')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
             
         # Get all of the contacts
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
             contact = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
-                       'status': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact/{http://ws.constantcontact.com/ns/1.0/}Status'),
-                       'email_address': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact/{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
-                       'email_type': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact/{http://ws.constantcontact.com/ns/1.0/}EmailType'),
-                       'name': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact/{http://ws.constantcontact.com/ns/1.0/}Name'),
-                       'opt_in_time': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact/{http://ws.constantcontact.com/ns/1.0/}OptInTime'),
-                       'opt_in_source': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact/{http://ws.constantcontact.com/ns/1.0/}OptInSource'),
+                       'status': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                '{http://ws.constantcontact.com/ns/1.0/}Contact/'
+                                                '{http://ws.constantcontact.com/ns/1.0/}Status'),
+                       'email_address': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}Contact/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
+                       'email_type': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                    '{http://ws.constantcontact.com/ns/1.0/}Contact/'
+                                                    '{http://ws.constantcontact.com/ns/1.0/}EmailType'),
+                       'name': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                              '{http://ws.constantcontact.com/ns/1.0/}Contact/'
+                                              '{http://ws.constantcontact.com/ns/1.0/}Name'),
+                       'opt_in_time': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                     '{http://ws.constantcontact.com/ns/1.0/}Contact/'
+                                                     '{http://ws.constantcontact.com/ns/1.0/}OptInTime'),
+                       'opt_in_source': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}Contact/'
+                                                       '{http://ws.constantcontact.com/ns/1.0/}OptInSource'),
                        'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated')}
             
             contacts.append(contact)
             
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            contacts.extend(self.get_contacts(path=next))
+        if(next_path != None):
+            contacts.extend(self.get_contacts(path=next_path))
             
         return contacts
         
@@ -345,12 +369,12 @@ class CTCTConnection:
         
         # Check if there is a next link
         links = xml.findall('{%s}link' % (atom));
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/contacts')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
         
         # Get all of the contacts that were found
@@ -368,8 +392,8 @@ class CTCTConnection:
             contacts.append(contact)
             
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            contacts.extend(self.query_contacts(path=next))
+        if(next_path != None):
+            contacts.extend(self.query_contacts(path=next_path))
         
         return contacts
     
@@ -396,11 +420,13 @@ class CTCTConnection:
         
         # Build an XML Tree from the return
         xml = ET.fromstring(response['body'])
-        contact_xml = xml.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Contact')
+        contact_xml = xml.find('{http://www.w3.org/2005/Atom}content/'
+                               '{http://ws.constantcontact.com/ns/1.0/}Contact')
         
         # Get all of the Contact Lists this Contact is subscribed to
         contact_lists = []
-        contact_lists_xml = contact_xml.findall('{http://ws.constantcontact.com/ns/1.0/}ContactLists/{http://ws.constantcontact.com/ns/1.0/}ContactList')
+        contact_lists_xml = contact_xml.findall('{http://ws.constantcontact.com/ns/1.0/}ContactLists/'
+                                                '{http://ws.constantcontact.com/ns/1.0/}ContactList')
         for contact_list in contact_lists_xml:
             contact_lists.append(contact_list.get('id'))
         
@@ -511,7 +537,8 @@ class CTCTConnection:
             return False
     
     def __create_contact_xml(self, params):
-        """ Generates a valid XML string from user given parameters to be sent to ConstantContact web services """
+        """ Generates a valid XML string from user given parameters to be sent to 
+        ConstantContact web services """
         contact_lists_array = []
         for list in params['contact_lists']:
             contact_lists_array.append('<ContactList id="' + list + '" />')
@@ -615,8 +642,9 @@ class CTCTConnection:
         return xml_body
     
     def get_contact_events(self, event_type, email=None, contact_id_number=None, path=None):
-        """ Returns events associated with a Contact (within the past 90 days) based on the given event type
-            event_type is one of (EVENTS_BOUNCES, EVENTS_CLICKS, EVENTS_FORWARDS, EVENTS_OPENS, EVENTS_OUT_OUTS, EVENTS_SENDS) """
+        """ Returns events associated with a Contact (within the past 90 days) 
+        based on the given event type event_type is one of (EVENTS_BOUNCES, 
+        EVENTS_CLICKS, EVENTS_FORWARDS, EVENTS_OPENS, EVENTS_OUT_OUTS, EVENTS_SENDS) """
         events = []
             
         # Get the contact_id_number from the email address if the user didn't provide one
@@ -661,34 +689,43 @@ class CTCTConnection:
         xml = ET.fromstring(response['body'])
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/contacts')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
         
         # Get all of the contact lists
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
-            contact = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}Contact')
-            campaign = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}Campaign')
+            contact = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' +
+                                 event_string +
+                                 '/{http://ws.constantcontact.com/ns/1.0/}Contact')
+            campaign = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' +
+                                  event_string +
+                                  '/{http://ws.constantcontact.com/ns/1.0/}Campaign')
+
             event = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
                      'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated'),
-                     'event_time': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}EventTime'),
+                     'event_time': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                  '{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/'
+                                                  '{http://ws.constantcontact.com/ns/1.0/}EventTime'),
                      'contact_id': contact.get('id'),
                      'contact_email_address': contact.findtext('{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
                      'campaign': campaign.get('id')
                      }
             if(event_type == self.EVENTS_CLICKS):
-                event['link_url'] = entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}LinkUrl'),
+                event['link_url'] = entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                   '{http://ws.constantcontact.com/ns/1.0/}' + event_string +
+                                                   '/{http://ws.constantcontact.com/ns/1.0/}LinkUrl'),
                       
             events.append(event)
                      
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            events.extend(self.get_campaigns(contact_id_number=contact_id_number, event_type=event_type, path=next))
+        if(next_path != None):
+            events.extend(self.get_campaigns(contact_id_number=contact_id_number, event_type=event_type, path=next_path))
             
         return events                   
     
@@ -720,28 +757,34 @@ class CTCTConnection:
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/campaigns')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
         
         # Get all of the campaigns
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
             campaign = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
-                        'name': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Campaign/{http://ws.constantcontact.com/ns/1.0/}Name'),
-                        'status': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Campaign/{http://ws.constantcontact.com/ns/1.0/}Status'),
-                        'date': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Campaign/{http://ws.constantcontact.com/ns/1.0/}Date'),
+                        'name': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                               '{http://ws.constantcontact.com/ns/1.0/}Campaign/'
+                                               '{http://ws.constantcontact.com/ns/1.0/}Name'),
+                        'status': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                 '{http://ws.constantcontact.com/ns/1.0/}Campaign/'
+                                                 '{http://ws.constantcontact.com/ns/1.0/}Status'),
+                        'date': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                               '{http://ws.constantcontact.com/ns/1.0/}Campaign/'
+                                               '{http://ws.constantcontact.com/ns/1.0/}Date'),
                         'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated')}
             
             campaigns.append(campaign)
             
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            campaigns.extend(self.get_campaigns(next))
+        if(next_path != None):
+            campaigns.extend(self.get_campaigns(next_path))
             
         return campaigns
     
@@ -757,17 +800,20 @@ class CTCTConnection:
         
         # Build an XML Tree from the return
         xml = ET.fromstring(response['body'])
-        campaign_xml = xml.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}Campaign')
+        campaign_xml = xml.find('{http://www.w3.org/2005/Atom}content/'
+                                '{http://ws.constantcontact.com/ns/1.0/}Campaign')
         
         # Get all of the Contact Lists this Campaign was sent to
         contact_lists = []
-        contact_lists_xml = campaign_xml.findall('{http://ws.constantcontact.com/ns/1.0/}ContactLists/{http://ws.constantcontact.com/ns/1.0/}ContactList')
+        contact_lists_xml = campaign_xml.findall('{http://ws.constantcontact.com/ns/1.0/}ContactLists/'
+                                                 '{http://ws.constantcontact.com/ns/1.0/}ContactList')
         for contact_list in contact_lists_xml:
             contact_lists.append({'id': contact_list.get('id')})
             
         # Get all of the urls
         urls = []
-        urls_xml = campaign_xml.findall('{http://ws.constantcontact.com/ns/1.0/}Urls/{http://ws.constantcontact.com/ns/1.0/}Url')
+        urls_xml = campaign_xml.findall('{http://ws.constantcontact.com/ns/1.0/}Urls/'
+                                        '{http://ws.constantcontact.com/ns/1.0/}Url')
         for url in urls_xml:
             urls.append({'id': url.get('id'),
                          'value': url.findtext('{http://ws.constantcontact.com/ns/1.0/}Value'),
@@ -795,8 +841,9 @@ class CTCTConnection:
         return campaign
 
     def get_campaign_events(self, campaign_id_number, event_type, path=None):
-        """ Returns events associated with a Contact (within the past 90 days) based on the given event type
-            event_type is one of CTCTConnection.{EVENTS_BOUNCES, EVENTS_CLICKS, EVENTS_FORWARDS, EVENTS_OPENS, EVENTS_OUT_OUTS, EVENTS_SENDS} """
+        """ Returns events associated with a Contact (within the past 90 days) 
+        based on the given event type event_type is one of CTCTConnection.{EVENTS_BOUNCES, 
+        EVENTS_CLICKS, EVENTS_FORWARDS, EVENTS_OPENS, EVENTS_OUT_OUTS, EVENTS_SENDS} """
         events = []
         
         if(event_type == self.EVENTS_BOUNCES):
@@ -833,22 +880,28 @@ class CTCTConnection:
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/campaigns')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
         
         # Get all of the contact lists
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
-            contact = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}Contact')
-            campaign = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}Campaign')
+            contact = entry.find('{http://www.w3.org/2005/Atom}content/'
+                                 '{http://ws.constantcontact.com/ns/1.0/}' + event_string +
+                                 '/{http://ws.constantcontact.com/ns/1.0/}Contact')
+            campaign = entry.find('{http://www.w3.org/2005/Atom}content/'
+                                  '{http://ws.constantcontact.com/ns/1.0/}' + event_string +
+                                  '/{http://ws.constantcontact.com/ns/1.0/}Campaign')
             event = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
                      'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated'),
-                     'event_time': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}' + event_string + '/{http://ws.constantcontact.com/ns/1.0/}EventTime'),
+                     'event_time': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                  '{http://ws.constantcontact.com/ns/1.0/}' + event_string +
+                                                  '/{http://ws.constantcontact.com/ns/1.0/}EventTime'),
                      'contact_id': contact.get('id'),
                      'contact_email_address': contact.findtext('{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
                      'campaign': campaign.get('id')
@@ -857,8 +910,8 @@ class CTCTConnection:
             events.append(event)
                      
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            events.extend(self.get_campaign_events(campaign_id_number, event_type, path=next))
+        if(next_path != None):
+            events.extend(self.get_campaign_events(campaign_id_number, event_type, path=next_path))
             
         return events  
         
@@ -901,22 +954,28 @@ class CTCTConnection:
         xml = ET.fromstring(response['body'])
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/campaigns')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
         
         # Get all of the contact lists
         entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
         for entry in entries:
-            contact = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ClickEvent/{http://ws.constantcontact.com/ns/1.0/}Contact')
-            campaign = entry.find('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ClickEvent/{http://ws.constantcontact.com/ns/1.0/}Campaign')
+            contact = entry.find('{http://www.w3.org/2005/Atom}content/'
+                                 '{http://ws.constantcontact.com/ns/1.0/}ClickEvent/'
+                                 '{http://ws.constantcontact.com/ns/1.0/}Contact')
+            campaign = entry.find('{http://www.w3.org/2005/Atom}content/'
+                                  '{http://ws.constantcontact.com/ns/1.0/}ClickEvent/'
+                                  '{http://ws.constantcontact.com/ns/1.0/}Campaign')
             event = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
                      'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated'),
-                     'event_time': entry.findtext('{http://www.w3.org/2005/Atom}content/{http://ws.constantcontact.com/ns/1.0/}ClickEvent/{http://ws.constantcontact.com/ns/1.0/}EventTime'),
+                     'event_time': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                  '{http://ws.constantcontact.com/ns/1.0/}ClickEvent/'
+                                                  '{http://ws.constantcontact.com/ns/1.0/}EventTime'),
                      'contact_id': contact.get('id'),
                      'contact_email_address': contact.findtext('{http://ws.constantcontact.com/ns/1.0/}EmailAddress'),
                      'campaign': campaign.get('id')
@@ -925,8 +984,8 @@ class CTCTConnection:
             events.append(event)
                      
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            events.extend(self.__get_campaign_events_click_single_url(next))
+        if(next_path != None):
+            events.extend(self.__get_campaign_events_click_single_url(path=next_path))
             
         return events
 
@@ -953,12 +1012,12 @@ class CTCTConnection:
 
         # Check if there is a next link
         links = xml.findall('{%s}link' % (atom));
-        next = None
+        next_path = None
         for link in links:
             if(link.get('rel') == 'next'):
                 next_link = link.get('href')
                 slash = next_link.find('/activities')
-                next = next_link[slash:]
+                next_path = next_link[slash:]
                 break
                 
         # Get all of the activities
@@ -980,8 +1039,8 @@ class CTCTConnection:
             activities.append(activity)
             
         # If there is a next link, recursively retrieve from there too
-        if(next != None):
-            activities.extend(self.get_activities(next))
+        if(nextl != None):
+            activities.extend(self.get_activities(path=next_path))
             
         return activities
         
@@ -1098,3 +1157,4 @@ class CTCTConnection:
         activity_id = xml.findtext('{%s}id' % CTCTConnection.NS_ATOM)
             
         return activity_id
+        
