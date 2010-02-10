@@ -278,7 +278,7 @@ Campaign types are:
     CAMPAIGNS_SCHEDULED (4)
     
     #get all sent campaigns
-    sent_campaigns = mConnection.get_campaigns(event_type=CTCTConnection.CAMPAIGNS_SENT)
+    sent_campaigns = mConnection.get_campaigns(type=CTCTConnection.CAMPAIGNS_SENT)
     
     #print the date for all sent campaigns
     for campaign in sent_campaigns:
