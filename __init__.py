@@ -95,7 +95,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
@@ -137,7 +138,9 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
+        
         contact_list_xml = xml.find('{http://www.w3.org/2005/Atom}content/'
                                     '{http://ws.constantcontact.com/ns/1.0/}ContactList')
         
@@ -167,7 +170,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
@@ -237,7 +241,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         contact_list_xml = xml.find('{http://www.w3.org/2005/Atom}content')
         
@@ -302,7 +307,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
@@ -365,7 +371,8 @@ class CTCTConnection:
             return None
             
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         # Check if there is a next link
         links = xml.findall('{%s}link' % (atom));
@@ -419,7 +426,9 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
+        
         contact_xml = xml.find('{http://www.w3.org/2005/Atom}content/'
                                '{http://ws.constantcontact.com/ns/1.0/}Contact')
         
@@ -653,7 +662,8 @@ class CTCTConnection:
             if(not contacts):
                 return None
             
-            contact_id_number = contact_id[contact_id.rindex("/"):]
+            contact_id = contacts[0]["id"]
+            contact_id_number = contact_id[contact_id.rindex("/")+1:]
         
         if(event_type == self.EVENTS_BOUNCES):
             request_string = '/contacts/' + str(contact_id_number) + '/events/bounces'
@@ -686,7 +696,9 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
+        
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
         next_path = None
@@ -735,13 +747,13 @@ class CTCTConnection:
         
         # Default path
         if(path == None):
-			if(type == CAMPAIGNS_DRAFT):
+			if(type == self.CAMPAIGNS_DRAFT):
 				path = '/campaigns?status=DRAFT'
-			elif(type == CAMPAIGNS_RUNNING):
+			elif(type == self.CAMPAIGNS_RUNNING):
 				path = '/campaigns?status=RUNNING'
-			elif(type == CAMPAIGNS_SENT):
+			elif(type == self.CAMPAIGNS_SENT):
 				path = '/campaigns?status=SENT'
-			elif(type == CAMPAIGNS_SCHEDULED):
+			elif(type == self.CAMPAIGNS_SCHEDULED):
 				path = '/campaigns?status=SCHEDULED'
 			else:
 				path = '/campaigns'
@@ -753,7 +765,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
@@ -799,7 +812,9 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
+        
         campaign_xml = xml.find('{http://www.w3.org/2005/Atom}content/'
                                 '{http://ws.constantcontact.com/ns/1.0/}Campaign')
         
@@ -876,7 +891,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
@@ -951,7 +967,9 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
+        
         # Check if there is a next link
         links = xml.findall('{http://www.w3.org/2005/Atom}link');
         next_path = None
@@ -1008,7 +1026,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
 
         # Check if there is a next link
         links = xml.findall('{%s}link' % (atom));
@@ -1039,7 +1058,7 @@ class CTCTConnection:
             activities.append(activity)
             
         # If there is a next link, recursively retrieve from there too
-        if(nextl != None):
+        if(next_path != None):
             activities.extend(self.get_activities(path=next_path))
             
         return activities
@@ -1060,7 +1079,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
         activity_xml = xml.find('{%s}content/{%s}Activity' % (atom, ctct))
         
         # Get all of the Errors this Activity has generated
@@ -1151,7 +1171,8 @@ class CTCTConnection:
             return None
         
         # Build an XML Tree from the return
-        xml = ET.fromstring(response['body'])
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
             
         #return activity id of created activity
         activity_id = xml.findtext('{%s}id' % CTCTConnection.NS_ATOM)
