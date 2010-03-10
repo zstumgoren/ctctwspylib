@@ -1179,3 +1179,90 @@ class CTCTConnection:
             
         return activity_id
         
+    def get_schedules(self, campaign_id_number):
+        """ Gets all of the schedules for the given campaign.
+            Currently, you can only have one schedule per email. """
+        schedules = []
+        
+        path = '/campaigns/' + str(campaign_id_number) + '/schedules'    
+        response = self.connection.request_get(path)
+        
+        # If the status code isn't 200, we have a problem so just return None
+        if(int(response['headers']['status']) != 200):
+            return None
+        
+        # Build an XML Tree from the return
+        #xml = ET.fromstring(response['body'])
+        xml = ET.fromstring(response['body'].encode('ascii','xmlcharrefreplace'))
+        
+        # Get all of the contact lists
+        entries = xml.findall('{http://www.w3.org/2005/Atom}entry')
+        for entry in entries:
+            schedule = {'id': entry.findtext('{http://www.w3.org/2005/Atom}id'),
+                        'title': entry.findtext('{http://www.w3.org/2005/Atom}title'),
+                        'updated': entry.findtext('{http://www.w3.org/2005/Atom}updated'),
+                        'scheduled_time': entry.findtext('{http://www.w3.org/2005/Atom}content/'
+                                                         '{http://ws.constantcontact.com/ns/1.0/}Schedule/'
+                                                         '{http://ws.constantcontact.com/ns/1.0/}ScheduledTime')}
+            schedules.append(schedule)
+  
+        return schedules    
+        
+    def create_schedule(self, campaign_id_number, params):
+        """ Creates a new schedule to send a draft email or resend a sent email. 
+            Currently, you can only have one schedule per email, so if one already exists, you must use update. """
+        schedule_url = '/campaigns/' + str(campaign_id_number) + '/schedules'
+        response = self.connection.request_post(schedule_url, body=self.__create_schedule_xml(params), headers={'Content-Type': 'application/atom+xml'})
+
+        # Web service returns 201 status code if successful
+        # There is a weird bug where sometimes web service returns a 500 code, this is also successful?
+        if(int(response['headers']['status']) == 201 or int(response['headers']['status']) == 500):
+            return True
+        else:
+            return False
+        
+    def update_schedule(self, campaign_id_number, schedule_number, params):
+        """ Updates an already created schedule. """
+        schedule_url = '/campaigns/' + str(campaign_id_number) + '/schedules/' + str(schedule_number) 
+        response = self.connection.request_put(schedule_url, body=self.__create_schedule_xml(params), headers={'Content-Type': 'application/atom+xml'})
+        
+        #Web service returns 201 or 204 status code if successful
+        # There is a weird bug where sometimes web service returns a 500 code, this is also successful?
+        if(int(response['headers']['status']) == 201 or int(response['headers']['status']) == 204 or int(response['headers']['status']) == 500):
+            return True
+        else:
+            return False
+        
+    def __create_schedule_xml(self, params):
+        """ Creates the xml used by create_schedule and update_schedule to send to the web service. """
+        schedule_xml = """<?xml version='1.0' encoding='UTF-8'?>
+            <entry xmlns="http://www.w3.org/2005/Atom">
+                <link href="" rel="edit" />
+                <id>%s</id>
+                <title type="text">2010-11-13T20:03:35.000Z</title>
+                <updated>2010-11-13T20:03:35.000Z</updated>
+                <author>
+                    <name>Constant Contact</name>
+                </author>
+                <content type="application/vnd.ctct+xml">
+                    <Schedule xmlns="http://ws.constantcontact.com/ns/1.0/" id="/">
+                        <ScheduledTime>%s</ScheduledTime>
+                    </Schedule>
+                </content>
+            </entry>
+        """ % (params['id'] if 'id' in params else 'https://api.constantcontact.com/ws/customers/huanlai/campaigns/1102927358219/schedules/1',
+                params['scheduled_time'])
+                
+        return schedule_xml        
+                
+    def delete_schedule(self, campaign_id_number, schedule_number):
+        """ Cancels the schedule. """
+        schedule_url = '/campaigns/' + str(campaign_id_number) + '/schedules/' + str(schedule_number)
+        response = self.connection.request_delete(schedule_url)
+        
+        # Web service returns 204 status code if successful
+        if(int(response['headers']['status']) == 204):
+            return True
+        else:
+            return False
+    
