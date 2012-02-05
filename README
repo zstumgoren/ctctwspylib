@@ -391,7 +391,7 @@ Fields returned are:
     errors = activity['errors']
     for error in errors:
         print error
-        
+
 **Creating an Add Contacts / Remove Contacts Activity
 
 To create an Add or Remove Contacts activity you must supply a type (Add or Remove), the lists you would like to add to or remove from, and the actual contact data to be added or removed.  The activity id is returned or None if it was unsuccessful
@@ -458,3 +458,23 @@ Options (defaults are bold):
         #check the activity status
         activity = mConnection.get_activity(activity_id_number=activity_id)
         print activity['status']
+
+**Getting Data from a Bulk Contacts Export Activity
+
+A bulk export of contacts can be retrieved using the name of the generated export file. The method accepts either a full path or base file name.  It returns a dictionary of headers and the data payload, either as a list of dictionaries (the default) or as an iterable, unicode-friendly csv.DictReader instance.
+
+    # Fetch data with full path...
+    bulk_data = mConnection.get_bulk_export('/ws/customers/<username>/activities/a07e5ke3u5dgy7a11on.txt')
+    # ...or using only the base file name
+    bulk_data = mConnection.get_bulk_export('a07e5ke3u5dgy7a11on.txt')
+
+    # Header info is available
+    print bulk_data['headers']
+
+    print bulk_data['data'][0]['Email Address']
+
+    # Alternatively, fetch an iterable return value
+    bulk_data = mConnection.get_bulk_export('a07e5ke3u5dgy7a11on.txt', as_iter=True)
+    for row in bulk_data['data']:
+        print row
+

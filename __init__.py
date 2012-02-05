@@ -17,10 +17,13 @@
 __author__ = "Huan Lai, Constant Contact Labs"
 __license__ = "http://www.apache.org/licenses/LICENSE-2.0"
 
-from restful_lib import Connection
 from urllib import quote, quote_plus, urlencode
 import xml.etree.ElementTree as ET
 import re
+import StringIO
+
+from restful_lib import Connection
+from csvkit import CSVKitDictReader
 
 class InvalidUsernameException(Exception):
     def __init__(self, value):
@@ -78,6 +81,7 @@ class CTCTConnection:
                 raise InvalidUsernameException('This user name contains characters that are no '
                                                'longer supported. Please log in to '
                                                'constantcontact.com and update your user name.')
+
         
     def get_contact_lists(self, path=None):
         """ Returns all of the Contact Lists from ConstantContact. 
@@ -1178,6 +1182,51 @@ class CTCTConnection:
         activity_id = xml.findtext('{%s}id' % CTCTConnection.NS_ATOM)
             
         return activity_id
+
+    def get_bulk_export(self, file_name, as_iter=False):
+        """
+        Returns Bulk Export of Constant Contacts. The CSV/TXT file of contacts
+        can be retrieved using the name of the generated export file (this filename
+        can be obtained using the CTCTConnection.get_activity method).
+
+        Return value is a dictionary of headers and the data payload, either as 
+        a list of dictionaries (the default) or as an iterable, unicode-friendly 
+        csv.DictReader instance.
+        
+        ARGS:
+
+            file_name - (required) Either full path of file or base file name
+
+            as_iter - Defaults to False. If True, returns data as iterable, 
+                      unicode-friendly DictReader instance
+
+        USAGE:
+
+            # Fetch data with full path...
+            bulk_data = mConnection.get_bulk_export('/ws/customers/<username>/activities/a07e5ke3u5dgy7a11on.txt')
+
+            # ...or using only the base file name
+            bulk_data = mConnection.get_bulk_export('a07e5ke3u5dgy7a11on.txt')
+
+            # Header info is available
+            print bulk_data['headers']
+
+            print bulk_data['data'][0]['Email Address']
+
+            # Alternatively, fetch an iterable return value
+            bulk_data = mConnection.get_bulk_export('a07e5ke3u5dgy7a11on.txt', as_iter=True)
+            for row in bulk_data['data']:
+                print row
+        """
+        if file_name.startswith('/ws/customers/'):
+            file_name = file_name.split('/')[-1]
+        response = self.connection.request('/activities/%s' % file_name, bulk_download=True)
+        data_text = StringIO.StringIO(response['body'])
+        #data = UnicodeCSVDictReader(data_text)
+        data = CSVKitDictReader(data_text)
+        if as_iter == False:
+            data = list(data) 
+        return {'headers':response['headers'], 'data':data}
         
     def get_schedules(self, campaign_id_number):
         """ Gets all of the schedules for the given campaign.
@@ -1265,4 +1314,4 @@ class CTCTConnection:
             return True
         else:
             return False
-    
+

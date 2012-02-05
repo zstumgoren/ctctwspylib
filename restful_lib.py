@@ -22,17 +22,14 @@ __author__ = "Benjamin O'Steen <bosteen@gmail.com>"
 __version__ = '0.1'
 
 import httplib2
+import mimetypes
+import os
 import urlparse
 import urllib
-import base64
-import os
-from base64 import encodestring
-
-from mimeTypes import *
-
-import mimetypes
 
 from cStringIO import StringIO
+from mimeTypes import *
+
 
 class Connection:
     def __init__(self, base_url, username=None, password=None):
@@ -75,15 +72,18 @@ class Connection:
         guessed_mimetype = self.mimetypes.get(extension, mimetypes.guess_type(filename)[0])
         return guessed_mimetype or 'application/octet-stream'
         
-    def request(self, resource, method = "get", args = None, body = None, filename=None, headers={}):
-        params = None
+    def request(self, resource, method = "get", args = None, body = None, filename=None, bulk_download=False, headers={}):
         path = resource
         headers['User-Agent'] = 'Basic Agent'
         
         BOUNDARY = u'00hoYUXOnLD5RQ8SKGYVgLLt64jejnMwtO7q8XE1'
         CRLF = u'\r\n'
-        
-        if filename and body:
+
+        # Bulk activity file download
+        if method == 'get' and bulk_download == True:
+            headers['Content-Type']=mimetypes.guess_type(path)
+
+        elif filename and body:
             #fn = open(filename ,'r')
             #chunks = fn.read()
             #fn.close()
