@@ -1222,7 +1222,6 @@ class CTCTConnection:
             file_name = file_name.split('/')[-1]
         response = self.connection.request('/activities/%s' % file_name, bulk_download=True)
         data_text = StringIO.StringIO(response['body'])
-        #data = UnicodeCSVDictReader(data_text)
         data = CSVKitDictReader(data_text)
         if as_iter == False:
             data = list(data) 
